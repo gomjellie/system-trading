@@ -1,71 +1,50 @@
+# -*- coding:utf-8 -*-
 from pandas_datareader import data
 # https://github.com/ranaroussi/fix-yahoo-finance
-# 야후 데이터 가져오는게 문제가 있어서 이걸 써줘야된다
 import fix_yahoo_finance as yf
+import os
 
 yf.pdr_override()  # <== that's all it takes :-)
 
 
 class StockData:
-    """
-    arg stock = {
-        "ticker": ticker_val, ...string
-        "market": kospi, kosdaq, nasdaq, ...string
-    }
-    """
     def __init__(self):
         pass
 
-    def format_ticker(stock):
-        pass
+    def _get_path(self, ticker, market, base_dir='./app/data/prices'):
+        path = os.path.join(base_dir, "{}/{}.csv".format(
+            market,
+            str(ticker)
+        ))
+        return path
 
-    def _get_kospi(self, stock):  # conventional private naming
-        ticker = stock['ticker']
-        return data.get_data_google(ticker)
+    def _get_kospi_csv(self, ticker):  # conventional private naming
+        #ticker = 'KRX:' + str(ticker)
+        #return data.get_data_google(ticker, start='1996-05-06')
+        ticker = str(ticker) + '.KS'
+        return data.get_data_yahoo(ticker, start='1996-05-06', thread=20)
 
-    def _get_kosdaq(self, stock):
-        ticker = stock['ticker']
-        return data.get_data_yahoo(ticker)
+    def _get_kosdaq_csv(self, ticker):
+        ticker = str(ticker) + '.KQ'
+        return data.get_data_yahoo(ticker, start='1996-05-06', thread=2)
 
-    def _get_nasdaq(self, stock):
-        ticker = stock['ticker']
-        return data.get_data_google(ticker)
+    def _get_nasdaq_csv(self, ticker):
+        return data.get_data_google(ticker, start='1996-05-06')
 
-    def error(self, stock):
-        raise Exception('unexpected market name {}'.format(stock['market']))
+    def error(self, market):
+        raise Exception('unexpected market name {}'.format(market))
 
-    def get_csv(self, stock):
-        mname = '_get_' + stock['market']
+    def get_csv(self, ticker, market):
+        market = str(market).lower()
+        mname = '_get_' + market + '_csv'
         if hasattr(self, mname):
             method = getattr(self, mname)
-            return method(stock)
+            return method(ticker)
         else:
-            self.error(stock)
+            self.error(market)
 
-stock_api = StockData()
+    def save_csv(self, ticker, market, df, path = None):
+        market = str(market).lower()
+        path = self._get_path(ticker, market)
+        df.to_csv(path)
 
-
-class StockDataTester:
-    def __init__(self):
-        self.stocks = {
-            'naver': {
-                'ticker': 'KRX:035420',
-                'market': 'kospi',
-            },
-            'apple': {
-                'ticker': 'NASDAQ:AAPL',
-                'market': 'nasdaq',
-            },
-            'afreeca tv': {
-                'ticker': '067160.KQ',
-                'market': 'kosdaq',
-            },
-        }
-
-    def run(self):
-        for stock in self.stocks.itervalues():
-            print(stock_api.get_csv(stock).sample)
-
-
-# stock_api_tester = StockDataTester()
-# stock_api_tester.run()

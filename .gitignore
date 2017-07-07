@@ -102,7 +102,7 @@ ENV/
 .mypy_cache/
 
 # csv files
-# *.csv
+*.csv
 
 # idea file?
 .idea/*
